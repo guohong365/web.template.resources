@@ -71,11 +71,16 @@
 		}
 	};
 	
-	$.loader = {};
-	$.loader.loader=function(options){
-		return new Loader(optoins);
+	$.loader = {
+	  loader : function(options){
+		return new Loader(options);
+		},
+	  small : function(anchor){
+		  return new Loader({anchor : anchor,	text : ''});
+		}
 	};
-	$.loader.small=function(anchor){return new Loader({anchor : anchor,	text : ''})};  
+	
+	
 
 	var HtmlLoader = function(options, element) {
 		this._o = {

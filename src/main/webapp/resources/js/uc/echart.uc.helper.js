@@ -6,11 +6,16 @@
 	var uc={
 		utils: {
 			mapManager:{maps:[], pendingQueue:[]},
-			loadMap2:function(cityCode, data, callback){
+			loadMap2:function(cityCode, data, callback, container){
 				var manager=$.utils.mapManager;
 				if(manager.maps[cityCode]==null){
 					if(manager.pendingQueue[cityCode]==null){
 						manager.pendingQueue[cityCode]=[{callback:callback,data:data, cityCode:cityCode}];
+						var $loader=null;
+						if(typeof container == 'string'){
+							$loader=$.loader.loader(container, '加载地图...');
+							$loader.show();
+						}						
 						$.get('resources/js/echart/map/json/'+ cityCode +'.json', function (mapJson) {
 							manager.maps[cityCode]=mapJson;
 							echarts.registerMap(cityCode, mapJson);
@@ -20,7 +25,9 @@
 								func.callback(func.cityCode, func.data);
 							}
 							manager.pendingQueue[cityCode]=[];
-						});
+						})
+						.always(function(){ if($loader) $loader.hide(); });
+						
 					} else {
 						manager.pendingQueue[cityCode].push({callback:callback,data:data,cityCode:cityCode});
 						return;
@@ -31,38 +38,59 @@
 					}
 				}
 			},
-			loadMap:function(cityCode, data, callback, maps){
+			loadMap:function(cityCode, data, callback, maps, container){
 				if(maps[cityCode]==null){
+					var $loader=null;
+					if(typeof container == 'string'){
+						$loader=$.loader.loader(container, '加载地图...');
+						$loader.show();
+					}
 					$.get('resources/js/echart/map/json/'+ cityCode +'.json', function (mapJson) {
 						maps[cityCode]=mapJson;
 						echarts.registerMap(cityCode, mapJson);
 						if(typeof(callback) == 'function'){
 							callback(cityCode, data);
 						}
-			    	});
+			    	})
+			    	.always(function(){ if($loader) $loader.hide(); });
 			    }
 			},
-			loadItem2:function(url, request_data, barCallback, mapCallback){
+			loadItem2:function(url, request_data, barCallback, mapCallback, barContainer, mapContainer){
 				  var ajaxOptions={url:url, type:'post', contentType:'application/json;charset=utf-8', data:JSON.stringify(request_data)};
 				  var $thisLoadMap=this.loadMap2;
-				  $.ajax(ajaxOptions).done(function(data){
+				  var $loader=null;
+				  if(typeof barContainer== 'string'){
+					  $loader=$.loader.loader(barContainer, '加载图表数据...');
+				  }
+				  
+				  $.ajax(ajaxOptions)
+				  .done(function(data){					  
 			    	  if(typeof(barCallback) == 'function'){
 			    		  barCallback(data);
 			    	  }
+			    	  $loader.hide();
 			    	  if(mapCallback){
-			    		  $thisLoadMap(request_data.params.city, data, mapCallback);
+			    		  $thisLoadMap(request_data.params.city, data, mapCallback, mapContainer);
 			    	  }
-			      });
+			      })
+			      .fail(function(){ if($loader) $loader.hide(); });
 			},
-			loadItem:function(url, request_data, barCallback, mapCallback, maps){
+			loadItem:function(url, request_data, barCallback, mapCallback, maps, barContainer, mapContainer){
 				  var ajaxOptions={url:url, type:'post', contentType:'application/json;charset=utf-8', data:JSON.stringify(request_data)};
 				  var $thisLoadMap=this.loadMap;
-				  $.ajax(ajaxOptions).done(function(data){
+				  var $loader=null;
+				  if(typeof barContainer== 'string'){
+					  $loader=$.loader.small(barContainer);
+				  }
+				  $.ajax(ajaxOptions)
+				  .done(function(data){					  
 			    	  if(typeof(barCallback) == 'function'){
 			    		  barCallback(data);
 			    	  }
-			    	  $thisLoadMap(request_data.params.city, data, mapCallback, maps);
-			      });
+			    	  $loader.hide();
+			    	  $thisLoadMap(request_data.params.city, data, mapCallback, maps, mapContainer);
+			      })
+			      .fail(function(){ if($loader) $loader.hide(); });
 			},
 			findSimpleName:function(name, simples){
 				for(var i=0; i<simples.length; i++){

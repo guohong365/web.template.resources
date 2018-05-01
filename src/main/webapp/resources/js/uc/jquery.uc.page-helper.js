@@ -83,6 +83,13 @@
 		} else {
 			console.warn('column select button is not binded.......');
 		}
+		//TODO 添加自定义事件，完成内部功能的调用
+		
+		//page.binder.refresh
+		$(element).on('page.binder.refresh', function(){
+			$(this).data('pageBinder').onRefresh();
+		});
+		
 	};
 
 	ListPageOperatorBinder.prototype = {
@@ -221,32 +228,23 @@
 			var loader = $('<div style="position: fixed; z-index: 2000;" class="ajax-loading-overlay"><i class="ajax-loading-icon fa fa-spin '+loading_icon+'"></i> '+loading_text+'</div>').insertBefore(contentArea);
 			var offset = contentArea.offset();
 			loader.css({top: offset.top, left: offset.left})
-			
-			console.log('on search....');
 			event.preventDefault();
-			console.log($('#queryInput'));
-			console.log('search param :' + $('#queryInput').serialize());
-			console.error(this._o.listUrl);
 			$.ajax({
 				type : 'POST',
 				url : this._o.listUrl,
 				data : $('#queryInput').serialize(),
 				dataType : 'html'
 			})
-			.complete(function(){
+			.done(function(data) {
+			  $('#listResult').html(data);
+			})
+			.fail(function() {
+			  $.utils.notice('查询','系统错误，查询失败!','gritter-error');				
+			  console.error('search error');
+			})
+			.always(function(){
 				contentArea.css('opacity', 1);
 				contentArea.prevAll('.ajax-loading-overlay').remove();
-			}).done(function(data) {
-				console.log('search completed....');
-				$('#listResult').html(data);
-			}).fail(function() {
-				console.error('search error');
-				$.gritter.add({
-					title:'查询',
-					text:'系统错误，查询失败!',
-					class_name:'gritter-error'
-				});				
-				console.error('search error');
 			});
 		},
 		onClickReset : function(event) {
